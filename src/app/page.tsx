@@ -32,6 +32,7 @@ export default function Home() {
   const [chatId, setChatId] = useState<string | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [chatUpdateTrigger, setChatUpdateTrigger] = useState(0);
+  const [usagePercentage, setUsagePercentage] = useState<number | null>(null);
   const selectedModel = useAppStore((state) => state.selectedModel);
   const logout = useAppStore((state) => state.logout);
 
@@ -165,12 +166,22 @@ export default function Home() {
           const chunk = decoder.decode(value, { stream: true });
           fullText += chunk;
 
+          let displayTag = fullText;
+          if (fullText.includes("__USAGE__:")) {
+            const parts = fullText.split("__USAGE__:");
+            displayTag = parts[0];
+            const tokenCount = parseInt(parts[1]);
+            if (!isNaN(tokenCount)) {
+              setUsagePercentage(Math.round((tokenCount / 100000) * 100));
+            }
+          }
+
           setMessages((prev) => {
             const newMessages = [...prev];
             const lastMessageIndex = newMessages.length - 1;
             newMessages[lastMessageIndex] = {
               ...newMessages[lastMessageIndex],
-              text: fullText,
+              text: displayTag,
             };
             return newMessages;
           });
@@ -265,7 +276,10 @@ export default function Home() {
           isLoading={isLoading}
           isWindowLoading={isWindowLoading}
         />
-        <MessageInput onSendMessage={handleSendMessage} />
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          usagePercentage={usagePercentage}
+        />
       </Box>
     </Box>
   );

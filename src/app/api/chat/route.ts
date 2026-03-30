@@ -96,12 +96,22 @@ You are a witty, senior-level collaborator. Your tone is authentic, grounded, an
     const stream = new ReadableStream({
       async start(controller) {
         let fullAiResponse = "";
+        let totalTokenCount = 0;
         try {
           for await (const chunk of responseStream) {
             if (chunk.text) {
               fullAiResponse += chunk.text;
               controller.enqueue(new TextEncoder().encode(chunk.text));
             }
+            if (chunk.usageMetadata?.totalTokenCount) {
+              totalTokenCount = chunk.usageMetadata.totalTokenCount;
+            }
+          }
+
+          if (totalTokenCount > 0) {
+            controller.enqueue(
+              new TextEncoder().encode(`__USAGE__:${totalTokenCount}`),
+            );
           }
 
           if (chatId) {

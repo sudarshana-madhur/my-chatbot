@@ -18,8 +18,10 @@ import { GEMINI_MODELS } from "@/lib/constants";
 
 export default function MessageInput({
   onSendMessage,
+  usagePercentage,
 }: {
   onSendMessage: (text: string) => void;
+  usagePercentage: number | null;
 }) {
   const [text, setText] = useState("");
   const { selectedModel, setModel } = useAppStore();
@@ -116,25 +118,44 @@ export default function MessageInput({
 
       {/* Actions Tab */}
       <Box sx={{ display: "flex", mt: 1 }}>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<SmartToyIcon fontSize="small" />}
-          endIcon={<ExpandMoreIcon />}
-          onClick={handleModelClick}
-          sx={{
-            borderRadius: 4,
-            textTransform: "none",
-            color: "text.secondary",
-            borderColor: "divider",
-            "&:hover": {
-              borderColor: "text.secondary",
-              backgroundColor: "action.hover",
-            },
-          }}
-        >
-          {selectedModel}
-        </Button>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<SmartToyIcon fontSize="small" />}
+            endIcon={<ExpandMoreIcon />}
+            onClick={handleModelClick}
+            sx={{
+              borderRadius: 4,
+              textTransform: "none",
+              color: "text.secondary",
+              borderColor: "divider",
+              "&:hover": {
+                borderColor: "text.secondary",
+                backgroundColor: "action.hover",
+              },
+            }}
+          >
+            {selectedModel}
+          </Button>
+
+          {usagePercentage !== null && (
+            <Box
+              sx={{
+                fontSize: "0.75rem",
+                color: "text.secondary",
+                bgcolor: "action.selected",
+                px: 1,
+                py: 0.5,
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              {usagePercentage}%
+            </Box>
+          )}
+        </Box>
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
