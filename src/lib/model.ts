@@ -1,24 +1,15 @@
-import { errorResponse } from "@/lib/response";
-import { db, admin } from "@/lib/firebase-admin";
-import { GEMINI_MODELS } from "@/lib/constants";
-import { getAuthUid } from "@/lib/auth";
 import fs from "fs";
 
-import {
-  createPartFromUri,
-  createUserContent,
-  GoogleGenAI,
-} from "@google/genai";
-
-const ai = new GoogleGenAI({});
+import { createPartFromUri, createUserContent } from "@google/genai";
+import genai from "./gemini";
 
 export async function transcribeAudio(audioFilePath: string): Promise<string> {
-  const myfile = await ai.files.upload({
+  const myfile = await genai.files.upload({
     file: audioFilePath,
     config: { mimeType: "audio/aac" },
   });
 
-  const response = await ai.models.generateContent({
+  const response = await genai.models.generateContent({
     model: "gemini-flash-latest",
     contents: createUserContent([
       createPartFromUri(myfile.uri!, myfile.mimeType!),

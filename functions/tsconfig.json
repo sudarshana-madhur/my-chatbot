@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib", // This is where the compiled JS goes
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2017",
+    "esModuleInterop": true, // Often useful for Firebase projects
+    "resolveJsonModule": true, // If you're importing JSON files
+    "forceConsistentCasingInFileNames": true, // Good practice
+
+    "rootDir": "src"
+  },
+  "compileOnSave": true,
+  "include": ["src"]
+}

@@ -1,11 +1,12 @@
 import { errorResponse } from "@/lib/response";
 import { db, admin } from "@/lib/firebase-admin";
-import { GEMINI_MODELS } from "@/lib/constants";
+import {
+  GEMINI_MODELS,
+  systemInstruction,
+  memoryProfileData,
+} from "@/lib/constants";
 import { getAuthUid } from "@/lib/auth";
-
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({});
+import genai from "@/lib/gemini";
 
 export async function POST(req: Request) {
   try {
@@ -19,6 +20,16 @@ export async function POST(req: Request) {
 
     const { message, history, chatId, model, isTemporaryChat } =
       await req.json();
+
+    const userDoc = await db.collection("users").doc(uid).get();
+    const userData = userDoc.data();
+    const memoryProfile = userData?.memoryProfile;
+
+    let finalSystemInstruction = systemInstruction;
+    if (memoryProfile) {
+      finalSystemInstruction +=
+        "\n\n" + memoryProfileData.replace("{profileData}", memoryProfile);
+    }
 
     const selectedModel = GEMINI_MODELS.includes(model)
       ? model
@@ -36,6 +47,7 @@ export async function POST(req: Request) {
           role: "user",
           text: message,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          isProcessed: false,
         });
 
       // Update chat document
@@ -55,31 +67,14 @@ export async function POST(req: Request) {
         );
     }
 
-    const chat = ai.chats.create({
+    const chat = genai.chats.create({
       model: selectedModel,
       history: history.map((msg: { sender: string; text: string }) => ({
         role: msg.sender,
         parts: [{ text: msg.text }],
       })),
       config: {
-        systemInstruction: `
-## Identity & Tone
-You are a witty, senior-level collaborator. Your tone is authentic, grounded, and concise—never clinical or robotic. When the user expresses personal or emotional struggle, lead with genuine validation and high-level perspective rather than a generic list of tips. 
-
-## Behavioral Guardrails
-1. **Critical Thinking:** You are a peer, not a sycophant. If the user suggests a path that is objectively counter-productive, harmful, or technically unsound, maintain your stance with logic.
-2. **Contextual Flexibility:** Do not be a pushover, but remain open to nuanced, high-level technical or personal edge cases if the user provides a valid rationale.
-
-## Technical & Project Workflow
-1. **Architectural Overview First:** For any implementation request, your first response must be a high-level landscape of the available options. 
-2. **Consultative Approach:** Briefly outline the trade-offs of the primary paths and ask the user to select an approach before you provide granular steps or code blocks.
-3. **Real-time Verification:** Always prioritize real-time data retrieval for modern frameworks or rapidly evolving documentation to ensure accuracy before offering implementation details.
-
-## Response Style
-- Prioritize scannability using Markdown (bolding, headers).
-- Keep prose tight and conversational. 
-- Avoid "dumping" information; provide it in logical, requested stages.
-        `,
+        systemInstruction: finalSystemInstruction,
         tools: [
           {
             googleSearch: {},
