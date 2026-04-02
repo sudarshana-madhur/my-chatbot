@@ -1,8 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  Typography,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import MessageBubble from "./MessageBubble";
+import { useAppStore } from "@/store/useAppStore";
 
 interface Message {
   text: string;
@@ -18,6 +27,7 @@ export default function ChatArea({
   isLoading: boolean;
   isWindowLoading: boolean;
 }) {
+  const { isTemporaryChat, setTemporaryChat } = useAppStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const prevMessagesLengthRef = useRef(messages.length);
   const lastMessageRef = useRef<HTMLDivElement>(null);
@@ -54,8 +64,50 @@ export default function ChatArea({
         display: "flex",
         flexDirection: "column",
         position: "relative",
+        backgroundColor: isTemporaryChat
+          ? "rgba(255, 0, 0, 0.06)"
+          : "transparent",
+        border: isTemporaryChat ? "2px dashed" : "none",
+        borderColor: "divider",
+        transition: "all 0.3s ease",
       }}
     >
+      {messages.length === 0 && !isWindowLoading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 10,
+          }}
+        >
+          <Tooltip
+            title={
+              isTemporaryChat
+                ? "Disable Temporary Chat"
+                : "Enable Temporary Chat"
+            }
+          >
+            <IconButton
+              onClick={() => setTemporaryChat(!isTemporaryChat)}
+              sx={{
+                backgroundColor: isTemporaryChat
+                  ? "primary.main"
+                  : "background.paper",
+                color: isTemporaryChat ? "white" : "text.secondary",
+                boxShadow: 2,
+                "&:hover": {
+                  backgroundColor: isTemporaryChat
+                    ? "primary.dark"
+                    : "action.hover",
+                },
+              }}
+            >
+              {isTemporaryChat ? <VisibilityIcon /> : <VisibilityOffIcon />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
       {!isWindowLoading &&
         messages.map((msg, index) => (
           <Box

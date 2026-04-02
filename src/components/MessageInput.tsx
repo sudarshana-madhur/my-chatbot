@@ -94,6 +94,7 @@ export default function MessageInput({
           const data = await response.json();
           onSendMessage(data.transcribedText);
         } catch (err) {
+          console.error(err);
           setErrorMsg("Failed to save recording. Please try again.");
           setShowError(true);
         } finally {
@@ -111,6 +112,7 @@ export default function MessageInput({
         setRecordingTime((prev) => prev + 1);
       }, 1000);
     } catch (err) {
+      console.error(err);
       setErrorMsg("Could not access microphone. Please check permissions.");
       setShowError(true);
     }

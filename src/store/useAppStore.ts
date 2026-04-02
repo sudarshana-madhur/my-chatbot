@@ -5,8 +5,10 @@ interface AppState {
   selectedModel: string;
   isInitialized: boolean;
   isLoggedIn: boolean;
+  isTemporaryChat: boolean;
   initStore: () => Promise<void>;
   setModel: (model: string) => Promise<void>;
+  setTemporaryChat: (isTemporary: boolean) => void;
   login: () => void;
   logout: () => Promise<void>;
 }
@@ -15,6 +17,7 @@ export const useAppStore = create<AppState>((set) => ({
   selectedModel: "gemini-2.5-flash",
   isInitialized: false,
   isLoggedIn: false,
+  isTemporaryChat: false,
   login: async () => {
     sessionStorage.setItem("isLoggedIn", "true");
     set({ isLoggedIn: true });
@@ -69,5 +72,8 @@ export const useAppStore = create<AppState>((set) => ({
     } catch (error) {
       console.error("Failed to save selected model:", error);
     }
+  },
+  setTemporaryChat: (isTemporary: boolean) => {
+    set({ isTemporaryChat: isTemporary });
   },
 }));

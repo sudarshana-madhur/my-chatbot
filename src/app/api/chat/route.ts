@@ -17,14 +17,14 @@ export async function POST(req: Request) {
       });
     }
 
-    const { message, history, chatId, model, isAudioInput, audioFileId } =
+    const { message, history, chatId, model, isTemporaryChat } =
       await req.json();
 
     const selectedModel = GEMINI_MODELS.includes(model)
       ? model
       : GEMINI_MODELS[3] || "gemini-2.5-flash";
 
-    if (chatId) {
+    if (chatId && !isTemporaryChat) {
       // Save user message
       await db
         .collection("users")
@@ -115,7 +115,7 @@ You are a witty, senior-level collaborator. Your tone is authentic, grounded, an
             );
           }
 
-          if (chatId) {
+          if (chatId && !isTemporaryChat) {
             await db
               .collection("users")
               .doc(uid)

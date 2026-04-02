@@ -35,6 +35,8 @@ export default function Home() {
   const [usagePercentage, setUsagePercentage] = useState<number | null>(null);
   const selectedModel = useAppStore((state) => state.selectedModel);
   const logout = useAppStore((state) => state.logout);
+  const isTemporaryChat = useAppStore((state) => state.isTemporaryChat);
+  const setTemporaryChat = useAppStore((state) => state.setTemporaryChat);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -78,6 +80,7 @@ export default function Home() {
 
     setChatId(null);
     setMessages(initialMessages);
+    setChatUpdateTrigger((prev) => prev + 1);
   };
 
   const handleDrawerToggle = () => {
@@ -87,12 +90,14 @@ export default function Home() {
   const handleNewChat = () => {
     setChatId(null);
     setMessages(initialMessages);
+    setTemporaryChat(false);
     if (mobileOpen) setMobileOpen(false);
   };
 
   const handleSelectChat = async (id: string) => {
     setChatId(id);
     setMessages(initialMessages);
+    setTemporaryChat(false);
     if (mobileOpen) setMobileOpen(false);
 
     try {
@@ -117,10 +122,12 @@ export default function Home() {
     setMessages((prev) => [...prev, { sender: "user", text }]);
     setIsLoading(true);
 
+    let isNewChat = false;
     let currentChatId = chatId;
-    if (!currentChatId) {
+    if (!currentChatId && !isTemporaryChat) {
       currentChatId = crypto.randomUUID();
       setChatId(currentChatId);
+      isNewChat = true;
     }
 
     // Add a placeholder for the AI's response that we'll append to
@@ -135,8 +142,9 @@ export default function Home() {
         body: JSON.stringify({
           message: text,
           history: messages,
-          chatId: currentChatId,
+          chatId: isTemporaryChat ? null : currentChatId,
           model: selectedModel,
+          isTemporaryChat,
         }),
       });
 
@@ -186,6 +194,10 @@ export default function Home() {
             return newMessages;
           });
         }
+      }
+
+      if (isNewChat) {
+        setChatUpdateTrigger((prev) => prev + 1);
       }
     } catch (error) {
       console.error("Failed to fetch AI response:", error);

@@ -13,6 +13,7 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Skeleton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
@@ -48,6 +49,7 @@ export default function Sidebar({
 }) {
   const router = useRouter();
   const [chats, setChats] = useState<Chat[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const logout = useAppStore((state) => state.logout);
 
@@ -72,6 +74,7 @@ export default function Sidebar({
 
   useEffect(() => {
     const fetchChats = async () => {
+      setIsLoading(true);
       try {
         const response = await fetchWithAuth("/api/chats");
         if (response.ok) {
@@ -80,6 +83,8 @@ export default function Sidebar({
         }
       } catch (error) {
         console.error("Failed to fetch chats:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -128,23 +133,34 @@ export default function Sidebar({
       <Divider sx={{ mb: 2 }} />
 
       <List sx={{ flexGrow: 1, overflowY: "auto" }}>
-        {chats.map((chat) => (
-          <ListItem key={chat.id} disablePadding>
-            <ListItemButton
-              sx={{ borderRadius: 1, mb: 0.5 }}
-              onClick={() => onSelectChat(chat.id)}
-            >
-              <ListItemText
-                primary={chat.title}
-                primaryTypographyProps={{
-                  noWrap: true,
-                  variant: "body2",
-                  sx: { overflow: "hidden", textOverflow: "ellipsis" },
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {isLoading
+          ? Array.from(new Array(5)).map((_, index) => (
+              <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
+                <Skeleton
+                  variant="rounded"
+                  width="100%"
+                  height={40}
+                  sx={{ borderRadius: 1 }}
+                />
+              </ListItem>
+            ))
+          : chats.map((chat) => (
+              <ListItem key={chat.id} disablePadding>
+                <ListItemButton
+                  sx={{ borderRadius: 1, mb: 0.5 }}
+                  onClick={() => onSelectChat(chat.id)}
+                >
+                  <ListItemText
+                    primary={chat.title}
+                    primaryTypographyProps={{
+                      noWrap: true,
+                      variant: "body2",
+                      sx: { overflow: "hidden", textOverflow: "ellipsis" },
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            ))}
       </List>
 
       <Box
