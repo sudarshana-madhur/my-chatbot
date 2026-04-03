@@ -19,7 +19,7 @@ export const useAppStore = create<AppState>((set) => ({
   isLoggedIn: false,
   isTemporaryChat: false,
   login: async () => {
-    sessionStorage.setItem("isLoggedIn", "true");
+    localStorage.setItem("isLoggedIn", "true");
     set({ isLoggedIn: true });
 
     try {
@@ -42,22 +42,36 @@ export const useAppStore = create<AppState>((set) => ({
     } catch (err) {
       console.error("Failed to logout on server:", err);
     }
-    sessionStorage.removeItem("isLoggedIn");
-    sessionStorage.removeItem("selectedModel");
+    localStorage.removeItem("isLoggedIn");
+    localStorage.removeItem("selectedModel");
     set({ isLoggedIn: false, selectedModel: "" });
   },
 
   initStore: async () => {
     try {
-      const loggedIn = sessionStorage.getItem("isLoggedIn") === "true";
+      const loggedIn = localStorage.getItem("isLoggedIn") === "true";
       if (loggedIn) {
         set({ isLoggedIn: true });
+
+        // Verify session by fetching user settings
+        try {
+          const res = await fetchWithAuth("/api/user/settings");
+          if (res.ok) {
+            const data = await res.json();
+            if (data.selectedModel) {
+              set({ selectedModel: data.selectedModel });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to verify session on initialization:", error);
+          // fetchWithAuth will handle logout if it's a 401
+        }
       }
-      set({ isInitialized: true });
     } catch (error) {
       console.error("Failed to initialize store:", error);
+    } finally {
+      set({ isInitialized: true });
     }
-    set({ isInitialized: true });
   },
   setModel: async (model: string) => {
     set({ selectedModel: model });
