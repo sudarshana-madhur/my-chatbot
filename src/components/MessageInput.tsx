@@ -13,6 +13,8 @@ import {
   Snackbar,
   Alert,
   Fade,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -32,6 +34,8 @@ export default function MessageInput({
   usagePercentage: number | null;
 }) {
   const [text, setText] = useState("");
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { selectedModel, setModel } = useAppStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -155,7 +159,7 @@ export default function MessageInput({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !isMobile) {
       e.preventDefault();
       handleSend();
     }
