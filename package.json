@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "build:functions": "npm --prefix functions run build",
-    "emulate": "npm run build:functions && firebase emulators:start"
+    "emulate": "npm run build:functions && firebase emulators:start",
+    "deploy": "firebase deploy --only functions"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
