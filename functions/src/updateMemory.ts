@@ -84,45 +84,28 @@ export const updateMemory = onSchedule(
             .join("\n---\n");
 
           const prompt = `
-Memory Profile Update
-
-Goal: Extract *personal, biographical, and psychological details* from a user's messages and integrate them into an existing memory profile. Focus strictly on aspects that define the user's identity, life story, goals, struggles, relationships, hobbies, and emotional state, *outside of transient work-related or technical problem-solving discussions*.
-
-You are a memory management system for a user profile. Your task is to analyze new messages from the user and update their evolving memory profile.
+# Task: Evolving User Memory
+You are an observant partner. Your goal is to update the user's "Memory Profile" based on your most recent interactions.
 
 **Existing User Memory:**
 """
 ${currentMemoryProfile || "No current memory profile exists."}
 """
 
-**New User Messages:**
+**New Interactions:**
 """
 ${newMessages}
 """
 
-**Instructions:**
-1.  **Review:** Carefully read the "Existing User Memory" and the "New User Message."
-2.  **Identify & Focus:** From the "New User Message," identify any new, distinct, and *personally significant* details about the user.
-    *   **INCLUDE:** Focus on information related to:
-        *   **Core Identity & Values:** Beliefs, aspirations, long-term goals, self-perception.
-        *   **Life Story & Background:** Family dynamics, upbringing, significant past events, or recurring life patterns.
-        *   **Relationships:** Dynamics with family, friends, or romantic interests (current or past, but not transactional or fleeting interactions).
-        *   **Hobbies & Interests:** Long-term passions like music, creative pursuits, and how these connect to personal expression or social bridges.
-        *   **Emotional & Psychological State:** Ongoing struggles, recovery efforts, coping mechanisms, and any shifts in perspective.
-        *   **Health & Well-being:** (e.g., if you mention a new long-term fitness goal or a significant health change, but not a minor headache).
-        *   **Professional Identity (High-Level):** Your *profession* and *overall career aspirations*.
-    *   **EXCLUDE:** Explicitly ignore and **DO NOT** include:
-        *   **Transient Work-Related Details:** Specific code snippets, debugging processes, technical architectures, design patterns, project deadlines, short-term work frustrations, daily stand-up summaries, or any details about specific work tasks unless they reflect a profound, ongoing personal struggle or long-term career shift.
-        *   **Ephemeral Information:** One-off questions, brainstorming sessions for non-personal topics, or minor daily logistics that don't reveal a deeper aspect of your personality or life.
-        *   **Generic Information:** Facts or statements that could apply to almost anyone and don't uniquely characterize you.
-3.  **Extract & Update:** If new, personally significant information (as defined above) is found, integrate it succinctly into the "Existing User Memory." Aim to update existing points or add new ones without repetition. The output should be the *entire, updated memory profile*. If no new relevant information is present, return the "Existing User Memory" unchanged.
+**Guidance:**
+Reflect on the new messages. What have you learned about the user that is worth remembering long-term? Focus on the "essence" of who they are: their life situation, their mindset, their long-term goals, and the things that truly matter to them. 
 
-**Example of an updated memory point:**
--   *Before:* "User enjoys reading."
--   *After a message about sci-fi:* "User enjoys reading, particularly science fiction novels."
+Ignore the "noise"—temporary technical fixes, one-off questions, or transient logistics.
 
-**Output Format:**
-A concise, bulleted list or paragraph of the complete, updated user memory profile.
+Integrate any new insights into the existing profile naturally. Update older points if the user's situation has changed, and keep the profile clean, concise, and deeply relevant to who they are as a person.
+
+**Output:**
+Return the complete, updated memory profile.
 `;
 
           const result = await ai.models.generateContent({
