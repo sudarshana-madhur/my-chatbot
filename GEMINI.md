@@ -19,14 +19,12 @@
 ## 🚀 Building and Running
 
 ### Main Application (Next.js)
-
 - **Development:** `npm run dev`
 - **Build:** `npm run build`
 - **Production Start:** `npm run start`
 - **Linting:** `npm run lint`
 
 ### Firebase Functions
-
 - **Build:** `npm run build:functions`
 - **Emulate:** `npm run emulate` (Builds functions then starts Firebase emulators)
 - **Deploy:** `npm run deploy` (Builds functions then deploys them)
