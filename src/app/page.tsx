@@ -37,6 +37,7 @@ export default function Home() {
   const logout = useAppStore((state) => state.logout);
   const isTemporaryChat = useAppStore((state) => state.isTemporaryChat);
   const setTemporaryChat = useAppStore((state) => state.setTemporaryChat);
+  const useMemory = useAppStore((state) => state.useMemory);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -145,6 +146,7 @@ export default function Home() {
           chatId: isTemporaryChat ? null : currentChatId,
           model: selectedModel,
           isTemporaryChat,
+          useMemory,
         }),
       });
 

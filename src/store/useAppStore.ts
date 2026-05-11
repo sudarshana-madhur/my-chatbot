@@ -6,9 +6,11 @@ interface AppState {
   isInitialized: boolean;
   isLoggedIn: boolean;
   isTemporaryChat: boolean;
+  useMemory: boolean;
   initStore: () => Promise<void>;
   setModel: (model: string) => Promise<void>;
   setTemporaryChat: (isTemporary: boolean) => void;
+  setUseMemory: (use: boolean) => void;
   login: () => void;
   logout: () => Promise<void>;
 }
@@ -18,6 +20,7 @@ export const useAppStore = create<AppState>((set) => ({
   isInitialized: false,
   isLoggedIn: false,
   isTemporaryChat: false,
+  useMemory: false,
   login: async () => {
     localStorage.setItem("isLoggedIn", "true");
     set({ isLoggedIn: true });
@@ -89,5 +92,8 @@ export const useAppStore = create<AppState>((set) => ({
   },
   setTemporaryChat: (isTemporary: boolean) => {
     set({ isTemporaryChat: isTemporary });
+  },
+  setUseMemory: (use: boolean) => {
+    set({ useMemory: use });
   },
 }));

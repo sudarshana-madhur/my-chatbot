@@ -15,6 +15,8 @@ import {
   Fade,
   useTheme,
   useMediaQuery,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
@@ -36,7 +38,7 @@ export default function MessageInput({
   const [text, setText] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { selectedModel, setModel } = useAppStore();
+  const { selectedModel, setModel, useMemory, setUseMemory } = useAppStore();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   // Audio Recording States
@@ -347,6 +349,22 @@ export default function MessageInput({
           >
             {selectedModel}
           </Button>
+
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={useMemory}
+                onChange={(e) => setUseMemory(e.target.checked)}
+              />
+            }
+            label={
+              <Typography variant="caption" color="text.secondary">
+                Memory
+              </Typography>
+            }
+            sx={{ ml: 1, mr: 0 }}
+          />
 
           {usagePercentage !== null && (
             <Box
