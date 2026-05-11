@@ -10,7 +10,7 @@
     "lint": "eslint",
     "build:functions": "npm --prefix functions run build",
     "emulate": "npm run build:functions && firebase emulators:start",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "npm run build:functions && firebase deploy --only functions"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
