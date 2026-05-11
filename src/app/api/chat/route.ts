@@ -18,7 +18,7 @@ export async function POST(req: Request) {
       });
     }
 
-    const { message, history, chatId, model, isTemporaryChat } =
+    const { message, history, chatId, model, isTemporaryChat, useMemory } =
       await req.json();
 
     const userDoc = await db.collection("users").doc(uid).get();
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     const memoryProfile = userData?.memoryProfile;
 
     let finalSystemInstruction = systemInstruction;
-    if (memoryProfile) {
+    if (useMemory && memoryProfile) {
       finalSystemInstruction +=
         "\n\n" + memoryProfileData.replace("{profileData}", memoryProfile);
     }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
           role: "user",
           text: message,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          isProcessed: false,
+          isProcessed: !useMemory,
         });
 
       // Update chat document
