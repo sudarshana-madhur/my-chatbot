@@ -1,9 +1,9 @@
 // functions/src/updateMemory.ts
 
 import { initializeApp, getApps } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 if (getApps().length === 0) {
   initializeApp();
@@ -15,22 +15,43 @@ export const updateMemory = onSchedule(
   {
     schedule: "0 * * * *", // Every hour
     timeZone: "Asia/Kolkata",
-    secrets: ["GEMINI_API_KEY"],
+    secrets: [
+      "GEMINI_API_KEY",
+      "GEMINI_MODEL",
+      "GOOGLE_CLOUD_PROJECT",
+      "GOOGLE_CLOUD_LOCATION",
+      "GOOGLE_GENAI_USE_VERTEXAI",
+    ],
   },
   async (event) => {
     void event;
     try {
       const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        console.error("GEMINI_API_KEY is not set.");
+      const model = process.env.GEMINI_MODEL;
+      const project = process.env.GOOGLE_CLOUD_PROJECT;
+      const location = process.env.GOOGLE_CLOUD_LOCATION;
+      const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI;
+
+      if (!apiKey || !project || !location || !useVertexAI) {
+        console.error(
+          "One or more required environment variables are not set.",
+        );
+        return;
+      }
+      if (!model) {
+        console.error("GEMINI_MODEL is not set.");
         return;
       }
 
       // Initialize AI using @google/genai
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({
+        apiKey,
+        project,
+        location,
+        vertexai: useVertexAI === "True",
+      });
 
       // Fetch all unprocessed user messages
-      // Note: This requires a composite index: messages (Collection Group) where role == 'user' and isProcessed == false
       const unprocessedMessagesSnapshot = await db
         .collectionGroup("messages")
         .where("role", "==", "user")
@@ -47,7 +68,6 @@ export const updateMemory = onSchedule(
       );
 
       // Group messages by user ID
-      // path: users/{uid}/chats/{chatId}/messages/{messageId}
       const messagesByUser: {
         [uid: string]: {
           docRef: FirebaseFirestore.DocumentReference;
@@ -57,7 +77,6 @@ export const updateMemory = onSchedule(
 
       unprocessedMessagesSnapshot.docs.forEach((doc) => {
         const pathParts = doc.ref.path.split("/");
-        // users -> [0], {uid} -> [1], chats -> [2], {chatId} -> [3], messages -> [4], {messageId} -> [5]
         const uid = pathParts[1];
         if (!messagesByUser[uid]) {
           messagesByUser[uid] = [];
@@ -75,9 +94,8 @@ export const updateMemory = onSchedule(
         try {
           const userRef = db.collection("users").doc(uid);
           const userDoc = await userRef.get();
-          const currentMemoryProfile = userDoc.exists
-            ? userDoc.data()?.memoryProfile || ""
-            : "";
+          const userData = userDoc.data();
+          const currentCorePersona = userData?.corePersona || "";
 
           const newMessages = messagesByUser[uid]
             .map((m) => m.text)
@@ -85,11 +103,11 @@ export const updateMemory = onSchedule(
 
           const prompt = `
 # Task: Evolving User Memory
-You are an observant partner. Your goal is to update the user's "Memory Profile" based on your most recent interactions.
+You are an observant partner. Your goal is to update the user's "Core Persona" and extract new "Contextual Memories" based on your most recent interactions.
 
-**Existing User Memory:**
+**Current Core Persona:**
 """
-${currentMemoryProfile || "No current memory profile exists."}
+${currentCorePersona || "No core persona exists yet."}
 """
 
 **New Interactions:**
@@ -98,33 +116,72 @@ ${newMessages}
 """
 
 **Guidance:**
-Reflect on the new messages. What have you learned about the user that is worth remembering long-term? Focus on the "essence" of who they are: their life situation, their mindset, their long-term goals, and the things that truly matter to them. 
+1. **Core Persona (Tier 1):** Reflect on the user's communication style, expertise, current mindset, and overarching preferences. Update the Core Persona to reflect who they are *now*. Keep it concise but deep.
+2. **Contextual Memories (Tier 2):** Extract distinct, atomic facts or past decisions that are worth remembering for future context (e.g., project details, specific life events, technical choices). 
+   - Ignore "noise" like temporary logistics or one-off questions.
+   - Return only *new* facts learned in these interactions.
 
-Ignore the "noise"—temporary technical fixes, one-off questions, or transient logistics.
-
-Integrate any new insights into the existing profile naturally. Update older points if the user's situation has changed, and keep the profile clean, concise, and deeply relevant to who they are as a person.
-
-**Output:**
-Return the complete, updated memory profile.
+Return the result as JSON.
 `;
 
           const result = await ai.models.generateContent({
-            model: "gemini-flash-latest",
-            contents: prompt,
+            model: model,
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            config: {
+              responseMimeType: "application/json",
+              responseJsonSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  updatedCorePersona: { type: Type.STRING },
+                  newFactualMemories: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING },
+                  },
+                },
+                required: ["updatedCorePersona", "newFactualMemories"],
+              },
+            },
           });
 
-          const updatedMemoryProfile =
-            result.text?.trim() || currentMemoryProfile;
+          const memoryData = JSON.parse(result.text || "{}");
+          if (!memoryData || Object.keys(memoryData).length === 0) {
+            console.error(`Empty or invalid response from AI for user ${uid}`);
+            continue;
+          }
+
+          const { updatedCorePersona, newFactualMemories } = memoryData;
 
           // Prepare batch update
           const batch = db.batch();
 
-          // Update user's memory profile
+          // Update Tier 1: Core Persona
           batch.set(
             userRef,
-            { memoryProfile: updatedMemoryProfile },
+            { corePersona: updatedCorePersona },
             { merge: true },
           );
+
+          // Update Tier 2: Factual Memories with Embeddings
+          for (const fact of newFactualMemories) {
+            const embeddingResult = await ai.models.embedContent({
+              model: "text-embedding-004",
+              contents: fact,
+            });
+
+            if (
+              embeddingResult.embeddings &&
+              embeddingResult.embeddings.length > 0
+            ) {
+              const embedding = embeddingResult.embeddings[0].values;
+
+              const memoryRef = userRef.collection("memories").doc();
+              batch.set(memoryRef, {
+                text: fact,
+                embedding: FieldValue.vector(embedding),
+                createdAt: FieldValue.serverTimestamp(),
+              });
+            }
+          }
 
           // Mark messages as processed
           messagesByUser[uid].forEach((m) => {
@@ -133,11 +190,10 @@ Return the complete, updated memory profile.
 
           await batch.commit();
           console.log(
-            `Updated memory profile and marked ${messagesByUser[uid].length} messages as processed for user: ${uid}`,
+            `Updated memory for user ${uid}: Core Persona updated, ${newFactualMemories.length} new facts stored.`,
           );
         } catch (error) {
           console.error(`Error processing memory for user ${uid}:`, error);
-          // Continue with next user
         }
       }
 

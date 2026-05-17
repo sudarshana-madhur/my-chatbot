@@ -3,10 +3,13 @@ import { db, admin } from "@/lib/firebase-admin";
 import {
   GEMINI_MODELS,
   systemInstruction,
-  memoryProfileData,
+  corePersonaTemplate,
+  contextualMemoriesTemplate,
+  intentSystemInstruction,
 } from "@/lib/constants";
 import { getAuthUid } from "@/lib/auth";
 import genai from "@/lib/gemini";
+import { Type } from "@google/genai";
 
 export async function POST(req: Request) {
   try {
@@ -21,19 +24,87 @@ export async function POST(req: Request) {
     const { message, history, chatId, model, isTemporaryChat, useMemory } =
       await req.json();
 
-    const userDoc = await db.collection("users").doc(uid).get();
+    const userRef = db.collection("users").doc(uid);
+    const userDoc = await userRef.get();
     const userData = userDoc.data();
-    const memoryProfile = userData?.memoryProfile;
+    const corePersona = userData?.corePersona;
 
     let finalSystemInstruction = systemInstruction;
-    if (useMemory && memoryProfile) {
+
+    // Tier 1: Core Persona (Always included if it exists)
+    if (useMemory && corePersona) {
       finalSystemInstruction +=
-        "\n\n" + memoryProfileData.replace("{profileData}", memoryProfile);
+        "\n\n" + corePersonaTemplate.replace("{corePersona}", corePersona);
+    }
+
+    // Tier 2: Contextual Memories (Retrieved via RAG if intent matches)
+    if (useMemory) {
+      try {
+        const intentResult = await genai.models.generateContent({
+          model: GEMINI_MODELS[0],
+          contents: [{ role: "user", parts: [{ text: message }] }],
+          config: {
+            systemInstruction: intentSystemInstruction,
+            responseMimeType: "application/json",
+            responseJsonSchema: {
+              type: Type.OBJECT,
+              properties: {
+                requiresContext: { type: Type.BOOLEAN },
+                searchQuery: { type: Type.STRING },
+              },
+              required: ["requiresContext", "searchQuery"],
+            },
+          },
+        });
+
+        const intentData = JSON.parse(intentResult.text || "{}");
+
+        if (intentData?.requiresContext && intentData?.searchQuery) {
+          const embeddingResult = await genai.models.embedContent({
+            model: "text-embedding-004",
+            contents: intentData.searchQuery,
+          });
+
+          if (
+            embeddingResult.embeddings &&
+            embeddingResult.embeddings.length > 0
+          ) {
+            const queryVector = embeddingResult.embeddings[0].values;
+
+            const memoriesSnapshot = await userRef
+              .collection("memories")
+              .findNearest(
+                "embedding",
+                admin.firestore.FieldValue.vector(queryVector),
+                {
+                  limit: 5,
+                  distanceMeasure: "COSINE",
+                },
+              )
+              .get();
+
+            if (!memoriesSnapshot.empty) {
+              const memoriesText = memoriesSnapshot.docs
+                .map((doc) => doc.data().text)
+                .join("\n- ");
+              finalSystemInstruction +=
+                "\n\n" +
+                contextualMemoriesTemplate.replace("{memories}", memoriesText);
+            }
+          }
+        }
+      } catch (intentError) {
+        console.error(
+          "Error in intent check or memory retrieval:",
+          intentError,
+        );
+        // Fallback: don't include contextual memories, but continue with the chat
+      }
     }
 
     const selectedModel = GEMINI_MODELS.includes(model)
       ? model
-      : GEMINI_MODELS[3] || "gemini-2.5-flash";
+      : GEMINI_MODELS[0];
 
     if (chatId && !isTemporaryChat) {
       // Save user message
