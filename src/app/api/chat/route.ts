@@ -61,8 +61,9 @@ export async function POST(req: Request) {
 
         if (intentData?.requiresContext && intentData?.searchQuery) {
           const embeddingResult = await genai.models.embedContent({
-            model: "text-embedding-004",
+            model: "gemini-embedding-2",
             contents: intentData.searchQuery,
+            config: { outputDimensionality: 768 },
           });
 
           if (

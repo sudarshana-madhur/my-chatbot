@@ -1,7 +1,7 @@
 export const GEMINI_MODELS = [
-  "gemini-3-flash-preview", //flash model
-  "gemini-3.1-flash-lite", //flash lite model
-  "gemini-3.1-pro-preview", //pro model
+  "gemini-flash-latest", //flash model
+  "gemini-flash-lite-latest", //flash lite model
+  "gemini-pro-latest", //pro model
 ];
 
 export const systemInstruction = `

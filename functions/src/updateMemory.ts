@@ -21,7 +21,7 @@ export const updateMemory = onSchedule(
     void event;
     try {
       const apiKey = process.env.GEMINI_API_KEY;
-      const model = "gemini-3-flash-preview";
+      const model = "gemini-flash-latest";
 
       if (!apiKey) {
         console.error("API key is required.");
@@ -147,8 +147,9 @@ Return the result as JSON.
           // Update Tier 2: Factual Memories with Embeddings
           for (const fact of newFactualMemories) {
             const embeddingResult = await ai.models.embedContent({
-              model: "text-embedding-004",
+              model: "gemini-embedding-2",
               contents: fact,
+              config: { outputDimensionality: 768 },
             });
 
             if (
