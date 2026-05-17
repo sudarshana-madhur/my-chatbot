@@ -27,10 +27,6 @@ export const updateMemory = onSchedule(
         console.error("API key is required.");
         return;
       }
-      if (!model) {
-        console.error("GEMINI_MODEL is not set.");
-        return;
-      }
 
       // Initialize AI using @google/genai
       const ai = new GoogleGenAI({
