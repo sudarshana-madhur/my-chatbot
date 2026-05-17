@@ -15,27 +15,18 @@ export const updateMemory = onSchedule(
   {
     schedule: "0 * * * *", // Every hour
     timeZone: "Asia/Kolkata",
-    secrets: [
-      "GEMINI_API_KEY",
-      "GEMINI_MODEL",
-      "GOOGLE_CLOUD_PROJECT",
-      "GOOGLE_CLOUD_LOCATION",
-      "GOOGLE_GENAI_USE_VERTEXAI",
-    ],
+    secrets: ["GEMINI_API_KEY"],
   },
   async (event) => {
     void event;
     try {
       const apiKey = process.env.GEMINI_API_KEY;
-      const model = process.env.GEMINI_MODEL;
-      const project = process.env.GOOGLE_CLOUD_PROJECT;
-      const location = process.env.GOOGLE_CLOUD_LOCATION;
-      const useVertexAI = process.env.GOOGLE_GENAI_USE_VERTEXAI;
+      const model = "gemini-3-flash-preview";
+      const location = "global";
+      const useVertexAI = true;
 
-      if (!apiKey || !project || !location || !useVertexAI) {
-        console.error(
-          "One or more required environment variables are not set.",
-        );
+      if (!apiKey) {
+        console.error("API key is required.");
         return;
       }
       if (!model) {
@@ -46,9 +37,8 @@ export const updateMemory = onSchedule(
       // Initialize AI using @google/genai
       const ai = new GoogleGenAI({
         apiKey,
-        project,
         location,
-        vertexai: useVertexAI === "True",
+        vertexai: useVertexAI,
       });
 
       // Fetch all unprocessed user messages
