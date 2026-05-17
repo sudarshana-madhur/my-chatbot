@@ -1,12 +1,11 @@
 {
-  "indexes": [],
-  "fieldOverrides": [
+  "indexes": [
     {
       "collectionGroup": "memories",
-      "fieldPath": "embedding",
-      "indexes": [
+      "queryScope": "COLLECTION",
+      "fields": [
         {
-          "queryScope": "COLLECTION",
+          "fieldPath": "embedding",
           "vectorConfig": {
             "dimension": 768,
             "flat": {}
@@ -14,5 +13,6 @@
         }
       ]
     }
-  ]
+  ],
+  "fieldOverrides": []
 }
