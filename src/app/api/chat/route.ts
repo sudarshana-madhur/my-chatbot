@@ -78,8 +78,9 @@ export async function POST(req: Request) {
         tools: [
           {
             googleSearch: {},
+          },
+          {
             urlContext: {},
-            codeExecution: {},
           },
         ],
       },

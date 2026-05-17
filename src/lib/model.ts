@@ -10,7 +10,7 @@ export async function transcribeAudio(audioFilePath: string): Promise<string> {
   });
 
   const response = await genai.models.generateContent({
-    model: "gemini-flash-lite-latest",
+    model: "gemini-3.1-flash-lite",
     contents: createUserContent([
       createPartFromUri(myfile.uri!, myfile.mimeType!),
       "Transcribe the audio to text and return only the transcribed text without any additional commentary.",
