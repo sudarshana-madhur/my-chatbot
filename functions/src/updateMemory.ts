@@ -31,7 +31,6 @@ export const updateMemory = onSchedule(
       // Initialize AI using @google/genai
       const ai = new GoogleGenAI({
         apiKey,
-        vertexai: true,
       });
 
       // Fetch all unprocessed user messages
