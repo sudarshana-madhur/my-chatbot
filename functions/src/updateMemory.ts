@@ -22,8 +22,6 @@ export const updateMemory = onSchedule(
     try {
       const apiKey = process.env.GEMINI_API_KEY;
       const model = "gemini-3-flash-preview";
-      const location = "global";
-      const useVertexAI = true;
 
       if (!apiKey) {
         console.error("API key is required.");
@@ -37,8 +35,7 @@ export const updateMemory = onSchedule(
       // Initialize AI using @google/genai
       const ai = new GoogleGenAI({
         apiKey,
-        location,
-        vertexai: useVertexAI,
+        vertexai: true,
       });
 
       // Fetch all unprocessed user messages
