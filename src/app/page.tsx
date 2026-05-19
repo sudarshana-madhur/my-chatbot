@@ -20,6 +20,7 @@ import { useAppStore } from "@/store/useAppStore";
 
 import { fetchWithAuth } from "@/lib/api-client";
 import Image from "next/image";
+import Link from "next/link";
 
 const initialMessages: { sender: string; text: string }[] = [];
 
@@ -260,12 +261,15 @@ export default function Home() {
                 justifyContent: "center",
               }}
             >
-              <Image
-                src="/icons/round/android-chrome-192x192.png"
-                alt="Logo"
-                width={32}
-                height={32}
-              />
+              <Link href="/">
+                <Image
+                  src="/icons/round/android-chrome-192x192.png"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  style={{ cursor: "pointer" }}
+                />
+              </Link>
             </Box>
             <IconButton color="inherit" onClick={handleMenuClick}>
               <MoreVertIcon />

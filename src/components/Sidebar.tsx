@@ -22,6 +22,7 @@ import { useAppStore } from "@/store/useAppStore";
 
 import { fetchWithAuth } from "@/lib/api-client";
 import Image from "next/image";
+import Link from "next/link";
 
 const drawerWidth = 260;
 
@@ -105,12 +106,15 @@ export default function Sidebar({
           gap: 1.5,
         }}
       >
-        <Image
-          src="/icons/round/android-chrome-192x192.png"
-          alt="Logo"
-          width={40}
-          height={40}
-        />
+        <Link href="/">
+          <Image
+            src="/icons/round/android-chrome-192x192.png"
+            alt="Logo"
+            width={40}
+            height={40}
+            style={{ cursor: "pointer" }}
+          />
+        </Link>
       </Box>
 
       <Button
